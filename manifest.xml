@@ -1,0 +1,24 @@
+<package>
+  <description brief="hector_pseye_camera">
+
+     hector_pseye_camera
+
+  </description>
+  <author>stefan</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/hector_pseye_camera</url>
+  <depend package="image_transport" />
+  <depend package="cv_bridge" />
+  <depend package="nodelet" />
+  <depend package="camera_info_manager" />
+  <depend package="roscpp" />
+  <depend package="sensor_msgs" />
+
+  <export>
+    <nodelet plugin="${prefix}/hector_pseye_camera_nodelet.xml" />
+  </export>
+
+</package>
+
+
