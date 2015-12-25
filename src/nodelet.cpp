@@ -25,7 +25,7 @@ public:
     int img_height = 480;
 
     pn.param("camera_name", p_camera_name_, std::string("ps_eye"));
-    pn.param("camera_topic", p_camera_topic_, p_camera_name_ + "/image_raw");
+//     pn.param("camera_topic", p_camera_topic_, p_camera_name_ + "/image_raw");
     pn.param("frame_name", p_frame_name_, std::string("ps_eye_frame"));
     pn.param("dev", p_device_name_, std::string("/dev/video0"));
     pn.param("camera_info_url", p_camera_info_url_, std::string(""));
@@ -37,8 +37,8 @@ public:
     camera_ = new Camera(p_device_name_.c_str(), img_width, img_height, p_fps_);
     camera_info_manager_ = new camera_info_manager::CameraInfoManager(pn, p_camera_name_, p_camera_info_url_);
 
-    image_transport_ = new image_transport::ImageTransport(getNodeHandle());
-    camera_publisher_ = image_transport_->advertiseCamera(p_camera_topic_, 1);
+    image_transport_ = new image_transport::ImageTransport(getPrivateNodeHandle());
+    camera_publisher_ = image_transport_->advertiseCamera("image_raw", 1);
 
     update_timer_ = pn.createTimer(ros::Duration(1.0/(static_cast<double>(p_fps_))), &HectorPsEyeCameraNodelet::timerPublishImageCallback, this, false );
 
@@ -62,8 +62,10 @@ public:
 
     if (retrieve_image){
       camera_->Update(true);
+      ros::Time capture_time = ros::Time::now();
       camera_->toMonoMat(&cv_img_.image);
-      cv_img_.header.stamp = ros::Time::now();
+      
+      cv_img_.header.stamp = capture_time;
 
       sensor_msgs::CameraInfoPtr camera_info = boost::make_shared<sensor_msgs::CameraInfo>(camera_info_manager_->getCameraInfo());
       camera_info->header = cv_img_.header;
