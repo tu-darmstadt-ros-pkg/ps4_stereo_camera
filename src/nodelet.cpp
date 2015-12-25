@@ -1,6 +1,5 @@
 #include "libcam.h"
 #include <nodelet/nodelet.h>
-#include <pluginlib/class_list_macros.h>
 #include <image_transport/image_transport.h>
 #include <image_transport/camera_publisher.h>
 #include <camera_info_manager/camera_info_manager.h>
@@ -101,4 +100,6 @@ protected:
 
 }
 
-PLUGINLIB_DECLARE_CLASS (hector_pseye_camera, HectorPsEyeCameraNodelet, hector_pseye_camera::HectorPsEyeCameraNodelet, nodelet::Nodelet);
+// Register nodelet
+#include <pluginlib/class_list_macros.h>
+PLUGINLIB_EXPORT_CLASS(hector_pseye_camera::HectorPsEyeCameraNodelet, nodelet::Nodelet)

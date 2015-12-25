@@ -1,5 +1,5 @@
 <!-- OpenNI driver nodelet publisher -->
-<library path="lib/libpseye_camera">
+<library path="lib/libpseye_camera_nodelet">
   <class name="hector_pseye_camera/HectorPsEyeCameraNodelet" type="hector_pseye_camera::HectorPsEyeCameraNodelet" base_class_type="nodelet::Nodelet">
     <description>
       PS Eye Driver
