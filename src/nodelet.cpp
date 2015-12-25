@@ -20,6 +20,9 @@ public:
   void onInit()
   {
     ros::NodeHandle& pn = this->getPrivateNodeHandle();
+    
+    int img_width = 640;
+    int img_height = 480;
 
     pn.param("camera_name", p_camera_name_, std::string("ps_eye"));
     pn.param("camera_topic", p_camera_topic_, p_camera_name_ + "/image_raw");
@@ -28,9 +31,8 @@ public:
     pn.param("camera_info_url", p_camera_info_url_, std::string(""));
     pn.param("use_every_n_th_image", p_use_every_n_th_image_, 1);
     pn.param("fps", p_fps_, 30);
-
-    int img_width = 640;
-    int img_height = 480;
+    pn.param("width", img_width, 640);
+    pn.param("height", img_height, 480);
 
     camera_ = new Camera(p_device_name_.c_str(), img_width, img_height, p_fps_);
     camera_info_manager_ = new camera_info_manager::CameraInfoManager(pn, p_camera_name_, p_camera_info_url_);
