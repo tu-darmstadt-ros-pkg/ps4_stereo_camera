@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+
+<launch>
+<!--  <arg name="tf_map_scanmatch_transform_frame_name" default="scanmatcher_frame"/>
+  <arg name="base_frame" default="base_footprint"/>
+  <arg name="odom_frame" default="nav"/>
+  <arg name="pub_map_odom_transform" default="true"/>
+  <arg name="scan_subscriber_queue_size" default="5"/>
+  <arg name="scan_topic" default="scan"/>-->
+  
+  <node pkg="hector_pseye_camera" type="pseye_camera_node" name="pseye_camera" output="screen">
+    <param name="camera_name" value="pseye_camera"/>    
+    <param name="camera_info_url" value="package://hector_pseye_camera/config/ps_eye_640_tracking_experiments.ini"/>
+    <param name="dev" value="/dev/video0"/>
+    <param name="frame_name" value="camera_optical_frame"/>
+    <param name="use_every_n_th_image" value="1"/>
+    <param name="fps" value="120"/>
+    <param name="width" value="640"/>
+    <param name="height" value="480"/>
+  </node>
+  
+  <node name="ps_eye_image_proc" pkg="nodelet" type="nodelet" args="load image_proc/rectify pseye_camera" output="screen">
+    <remap from="image_mono" to="pseye_camera/image_raw" />
+    <remap from="camera_info" to="pseye_camera/camera_info" />
+    <remap from="image_rect" to="pseye_camera/image_rect" />
+  </node>
+    
+  <!--<node pkg="tf" type="static_transform_publisher" name="map_nav_broadcaster" args="0 0 0 0 0 0 map nav 100"/>-->
+</launch>
