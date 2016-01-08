@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(hector_pseye_camera)
 
+#SET(CMAKE_BUILD_TYPE Release)
+
 find_package(catkin REQUIRED COMPONENTS
   camera_info_manager
   cv_bridge

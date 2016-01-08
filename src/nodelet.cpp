@@ -40,18 +40,35 @@ public:
     image_transport_ = new image_transport::ImageTransport(getPrivateNodeHandle());
     camera_publisher_ = image_transport_->advertiseCamera("image_raw", 1);
 
+    left_camera_publisher_  = image_transport_->advertiseCamera("left/image_raw", 5);
+    right_camera_publisher_ = image_transport_->advertiseCamera("right/image_raw", 5);
+
     update_timer_ = pn.createTimer(ros::Duration(1.0/(static_cast<double>(p_fps_))), &HectorPsEyeCameraNodelet::timerPublishImageCallback, this, false );
 
     cv_img_.header.frame_id = p_frame_name_;
     cv_img_.encoding = sensor_msgs::image_encodings::MONO8;
     cv_img_.image = cv::Mat(img_height,img_width,CV_8UC1);
 
+    left_cv_img_.header.frame_id = p_frame_name_;
+    left_cv_img_.encoding = sensor_msgs::image_encodings::MONO8;
+    left_cv_img_.image = cv::Mat(800,2000,CV_8UC1);
+
+    left_cv_img_.header.frame_id = p_frame_name_;
+    left_cv_img_.encoding = sensor_msgs::image_encodings::MONO8;
+    left_cv_img_.image = cv::Mat(800,2000,CV_8UC1);
+
     //cv::Mat* img = &cvImg.image;
   }
 
   void timerPublishImageCallback(const ros::TimerEvent& e)
   {
+    while (ros::ok()){
+      this->retrieveAndPublishImage();
+    }
+  }
 
+  void retrieveAndPublishImage()
+  {
     img_counter_++;
 
     bool retrieve_image = false;
@@ -62,20 +79,23 @@ public:
 
     if (retrieve_image){
       camera_->Update(true);
+
       ros::Time capture_time = ros::Time::now();
       camera_->toMonoMat(&cv_img_.image);
-      
+
       cv_img_.header.stamp = capture_time;
 
       sensor_msgs::CameraInfoPtr camera_info = boost::make_shared<sensor_msgs::CameraInfo>(camera_info_manager_->getCameraInfo());
       camera_info->header = cv_img_.header;
       camera_publisher_.publish(cv_img_.toImageMsg(), camera_info);
+
+      camera_->toMonoMat(&left_cv_img_.image, 0, 2000, 800);
+
+      left_camera_publisher_.publish(left_cv_img_.toImageMsg(), camera_info);
+
     }else{
       camera_->Update(false);
     }
-
-
-
   }
 
 
@@ -86,7 +106,12 @@ protected:
   image_transport::ImageTransport* image_transport_;
   image_transport::CameraPublisher camera_publisher_;
 
+  image_transport::CameraPublisher left_camera_publisher_;
+  image_transport::CameraPublisher right_camera_publisher_;
+
   cv_bridge::CvImage cv_img_;
+  cv_bridge::CvImage left_cv_img_;
+  cv_bridge::CvImage right_cv_img_;
 
   ros::Timer update_timer_;
 

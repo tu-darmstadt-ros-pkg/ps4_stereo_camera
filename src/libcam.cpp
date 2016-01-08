@@ -36,6 +36,8 @@
 
 #include <linux/videodev2.h>
 
+#include <iostream>
+
 #define CLEAR(x) memset (&(x), 0, sizeof (x))
 
 
@@ -798,6 +800,59 @@ void Camera::toMonoMat(cv::Mat *l) {
     dataIndex+=2;
   }
 }
+
+
+void Camera::toMonoMat(cv::Mat *l, int roi_offset_x, int roi_width, int roi_height) {
+  unsigned char *l_=(unsigned char *)l->data;
+
+  //*l = cv::Mat(roi_height,roi_width,CV_8UC1);
+
+
+  int dataIndex = 0;
+  int size_x = this->width;
+  int size_y = roi_height;
+
+  std::cout << size_x << " " << size_y << " " << roi_offset_x << " " << roi_width << " " << roi_height << "\n";
+
+
+  int idx = 0;
+  for (int j = 0; j < size_y; ++j){
+    dataIndex = j * size_x + roi_offset_x;
+    for (int i = 0; i < roi_width; ++i){
+      //if (j < 2){
+      //  std::cout << " i: " << idx <<  " di: " << dataIndex;
+      //}
+      l_[idx] = data[dataIndex];
+      dataIndex+=2;
+      idx++;
+    }
+    //std::cout << "\n------------\n";
+  }
+
+
+  /*
+  int dataIndex = 0;
+  int size_x = roi_width;
+  int size_y = 800;
+
+  std::cout << size_x << " " << size_y << "\n";
+
+
+  int idx = 0;
+  for (int j = 0; j < size_x; ++j){
+    dataIndex = j * (size_y+8);
+    for (int i = 0; i < roi_height; ++i){
+      //std::cout << idx << "\n";
+      l_[idx++] = data[dataIndex];
+      dataIndex+=2;
+    }
+  }
+  */
+
+}
+
+
+
 #endif
 
 int Camera::minBrightness() {

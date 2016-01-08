@@ -14,9 +14,9 @@
     <param name="dev" value="/dev/video0"/>
     <param name="frame_name" value="camera_optical_frame"/>
     <param name="use_every_n_th_image" value="1"/>
-    <param name="fps" value="120"/>
-    <param name="width" value="640"/>
-    <param name="height" value="480"/>
+    <param name="fps" value="60"/>
+    <param name="width" value="3448"/>
+    <param name="height" value="808"/>
   </node>
   
   <node name="ps_eye_image_proc" pkg="nodelet" type="nodelet" args="load image_proc/rectify pseye_camera" output="screen">
