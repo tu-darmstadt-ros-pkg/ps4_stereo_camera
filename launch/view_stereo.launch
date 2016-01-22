@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+
+<launch>
+  <node name="stereo_view" pkg="image_view" type="stereo_view" args="stereo:=/pseye_camera image:=image_rect"/>
+</launch>
+

@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+
+<launch>
+  <node pkg="elas_ros" type="elas_ros" name="elas_ros" output="screen">
+    <remap from="stereo" to="pseye_camera"/>
+    <remap from="image" to="image_rect"/>
+    <param name="disp_min" value="0"/>
+    <param name="disp_max" value="255"/>
+    <param name="add_corners" value="1"/>
+    <param name="beta" value="0"/>
+    <param name="gamma" value="15"/>
+  </node>
+  
+  <node name="stereo_view" pkg="image_view" type="stereo_view" args="stereo:=/pseye_camera image:=image_rect">
+    <remap from="/pseye_camera/disparity" to="/elas_ros/disparity" />
+  </node>
+</launch>
+
