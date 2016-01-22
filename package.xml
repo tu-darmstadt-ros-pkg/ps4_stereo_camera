@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package>
-  <name>hector_pseye_camera</name>
+  <name>ps4_stereo_camera</name>
   <version>0.0.0</version>
-  <description>The hector_pseye_camera package</description>
+  <description>The ps4_stereo_camera package</description>
 
   <maintainer email="kohlbrecher@sim.tu-darmstadt.de">Stefan Kohlbrecher</maintainer>
   <author email="kohlbrecher@sim.tu-darmstadt.de">Stefan Kohlbrecher</author>
