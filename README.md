@@ -1,5 +1,5 @@
 # ps4_stereo_camera
-PS4 stereo camera driver using the V4L2 API. Unlike the [ps4eye](https://github.com/longjie/ps4eye) it is using the V4L2 API directly and has lower CPU consumption.
+PS4 stereo camera driver using the V4L2 API. Unlike the [ps4eye](https://github.com/longjie/ps4eye) package which is using gstreamer/gscam, it is using the V4L2 API directly and has lower CPU consumption.
 
 # Credits
 
