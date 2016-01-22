@@ -6,11 +6,11 @@
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/image_encodings.h>
 
-namespace hector_pseye_camera{
+namespace ps4_stereo_camera{
 
-class HectorPsEyeCameraNodelet : public nodelet::Nodelet{
+class StereoCameraNodelet : public nodelet::Nodelet{
 public:
-  HectorPsEyeCameraNodelet()
+  StereoCameraNodelet()
     : nodelet::Nodelet()
     , img_counter_(0)
   {
@@ -46,7 +46,7 @@ public:
     left_camera_publisher_  = image_transport_->advertiseCamera("left/image_raw", 5);
     right_camera_publisher_ = image_transport_->advertiseCamera("right/image_raw", 5);
 
-    update_timer_ = pn.createTimer(ros::Duration(1.0/(static_cast<double>(p_fps_))), &HectorPsEyeCameraNodelet::timerPublishImageCallback, this, false );
+    update_timer_ = pn.createTimer(ros::Duration(1.0/(static_cast<double>(p_fps_))), &StereoCameraNodelet::timerPublishImageCallback, this, false );
 
     cv_img_.header.frame_id = p_frame_name_;
     cv_img_.encoding = sensor_msgs::image_encodings::MONO8;
@@ -164,4 +164,4 @@ protected:
 
 // Register nodelet
 #include <pluginlib/class_list_macros.h>
-PLUGINLIB_EXPORT_CLASS(hector_pseye_camera::HectorPsEyeCameraNodelet, nodelet::Nodelet)
+PLUGINLIB_EXPORT_CLASS(ps4_stereo_camera::StereoCameraNodelet, nodelet::Nodelet)

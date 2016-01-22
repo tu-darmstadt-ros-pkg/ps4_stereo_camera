@@ -29,6 +29,6 @@
   <run_depend>sensor_msgs</run_depend>
 
   <export>
-    <nodelet plugin="${prefix}/hector_pseye_camera_nodelet.xml" />
+    <nodelet plugin="${prefix}/ps4_stereo_camera_nodelet.xml" />
   </export>
 </package>
