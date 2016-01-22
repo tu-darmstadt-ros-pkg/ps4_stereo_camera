@@ -9,10 +9,10 @@
   <arg name="scan_topic" default="scan"/>-->
   
   
-  <node pkg="hector_pseye_camera" type="pseye_camera_node" name="pseye_camera" output="screen">
+  <node pkg="ps4_stereo_camera" type="ps4_stereo_camera_node" name="ps4_stereo_camera" output="screen">
     <param name="camera_name" value="pseye_camera"/>    
-    <param name="left_camera_info_url" value="package://hector_pseye_camera/config/ps4_cam_left.ini"/>
-    <param name="right_camera_info_url" value="package://hector_pseye_camera/config/ps4_cam_right.ini"/>
+    <param name="left_camera_info_url" value="package://ps4_stereo_camera/config/ps4_cam_left.ini"/>
+    <param name="right_camera_info_url" value="package://ps4_stereo_camera/config/ps4_cam_right.ini"/>
     <param name="dev" value="/dev/video0"/>
     <param name="frame_name" value="camera_optical_frame"/>
     <param name="use_every_n_th_image" value="1"/>
@@ -25,9 +25,9 @@
   
   
   
-  <group ns="pseye_camera">-->
+  <group ns="ps4_stereo_camera">
   <include file="$(find stereo_image_proc)/launch/stereo_image_proc.launch">
-      <arg name="manager" value="/pseye_camera" />
+      <arg name="manager" value="/ps4_stereo_camera" />
     </include>
   </group>
   
