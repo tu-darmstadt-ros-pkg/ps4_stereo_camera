@@ -842,6 +842,40 @@ void Camera::toMonoMat(cv::Mat *l, int roi_offset_x, int roi_width, int roi_heig
   }
 }
 
+void Camera::toColorMat(cv::Mat *l, int roi_offset_x, int roi_width, int roi_height) {
+  unsigned char *l_=(unsigned char *)l->data;
+
+  unsigned char *buf_data=(unsigned char *)buffers[buf->index].start;
+
+  /*
+  // Below eats significant CPU for conversion to RGB, have to find something better
+  cv::Mat full_buf_mat(this->height, this->width, CV_8UC2, (unsigned char *)buffers[buf->index].start);
+
+  cv::Mat roi(full_buf_mat(cv::Rect(roi_offset_x, 0, roi_width, roi_height)));
+
+  cv::cvtColor(roi, *l, CV_YUV2RGB_YUYV);
+  *l = roi;
+  * */
+
+  int dataIndex = 0;
+  int size_x = this->width;
+  int size_y = roi_height;
+
+  //Conversion below. ROS expects UYVY, camera provides YUYV
+
+  int idx = 0;
+  for (int j = 0; j < size_y; ++j){
+    dataIndex = (j * size_x + roi_offset_x)*2;
+    for (int i = 0; i < roi_width/2; ++i){
+      l_[idx++] = buf_data[dataIndex+1];
+      l_[idx++] = buf_data[dataIndex];
+      l_[idx++] = buf_data[dataIndex+3];
+      l_[idx++] = buf_data[dataIndex+2];
+      dataIndex+=4;
+    }
+  }
+}
+
 
 
 #endif

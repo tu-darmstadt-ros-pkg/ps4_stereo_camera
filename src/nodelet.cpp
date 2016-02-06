@@ -41,10 +41,19 @@ public:
     right_camera_info_manager_.reset(new camera_info_manager::CameraInfoManager(ros::NodeHandle("~/right"), p_camera_name_+"/right", p_right_camera_info_url_));
 
     image_transport_ = new image_transport::ImageTransport(getPrivateNodeHandle());
-    camera_publisher_ = image_transport_->advertiseCamera("image_raw", 1);
+    //camera_publisher_ = image_transport_->advertiseCamera("image_raw", 1);
 
-    left_camera_publisher_  = image_transport_->advertiseCamera("left/image_raw", 5);
-    right_camera_publisher_ = image_transport_->advertiseCamera("right/image_raw", 5);
+    //left_camera_publisher_  = image_transport_->advertiseCamera("left/image_raw", 5);
+    //right_camera_publisher_ = image_transport_->advertiseCamera("right/image_raw", 5);
+
+    left_mono_publisher_ = image_transport_->advertise("left/image_mono", 5);
+    right_mono_publisher_ = image_transport_->advertise("right/image_mono", 5);
+    left_color_publisher_ = image_transport_->advertise("left/image_color", 5);
+    right_color_publisher_ = image_transport_->advertise("right/image_color", 5);
+
+    left_camera_info_publisher_ = getPrivateNodeHandle().advertise<sensor_msgs::CameraInfo>("left/camera_info",5, false);
+    right_camera_info_publisher_ = getPrivateNodeHandle().advertise<sensor_msgs::CameraInfo>("right/camera_info",5, false);
+
 
     update_timer_ = pn.createTimer(ros::Duration(1.0/(static_cast<double>(p_fps_))), &StereoCameraNodelet::timerPublishImageCallback, this, false );
 
@@ -59,6 +68,14 @@ public:
     right_cv_img_.header.frame_id = p_frame_name_;
     right_cv_img_.encoding = sensor_msgs::image_encodings::MONO8;
     right_cv_img_.image = cv::Mat(800,1280,CV_8UC1);
+
+    left_cv_color_img_.header.frame_id = p_frame_name_;
+    left_cv_color_img_.encoding = sensor_msgs::image_encodings::YUV422;
+    left_cv_color_img_.image = cv::Mat(800,1280,CV_8UC2);
+
+    right_cv_color_img_.header.frame_id = p_frame_name_;
+    right_cv_color_img_.encoding = sensor_msgs::image_encodings::RGB8;
+    right_cv_color_img_.image = cv::Mat(800,1280,CV_8UC3);
 
     //cv::Mat* img = &cvImg.image;
   }
@@ -90,6 +107,7 @@ public:
       cv_img_.header.stamp = capture_time;
 
 
+      /*
       if (camera_publisher_.getNumSubscribers() > 0){
         //camera_->toMonoMat(&cv_img_.image);
 
@@ -98,30 +116,71 @@ public:
 
         //camera_publisher_.publish(cv_img_.toImageMsg(), camera_info);
       }
+      */
+
+      bool left_camera_info_requested = left_camera_info_publisher_.getNumSubscribers() > 0;
+      bool left_mono_requested = left_mono_publisher_.getNumSubscribers() > 0;
+      bool left_color_requested = left_color_publisher_.getNumSubscribers() > 0;
+
+      bool right_camera_info_requested = right_camera_info_publisher_.getNumSubscribers() > 0;
+      bool right_mono_requested = right_mono_publisher_.getNumSubscribers() > 0;
+      bool right_color_requested = right_color_publisher_.getNumSubscribers() > 0;
+
+      if (left_camera_info_requested ||
+          left_mono_requested ||
+          left_color_requested)
+      {
+        sensor_msgs::CameraInfoPtr left_camera_info = boost::make_shared<sensor_msgs::CameraInfo>(left_camera_info_manager_->getCameraInfo());
+        left_camera_info->header = cv_img_.header;
+
+        left_camera_info_publisher_.publish(left_camera_info);
+      }
+
+      if (right_camera_info_requested ||
+          right_mono_requested ||
+          right_color_requested)
+      {
+        sensor_msgs::CameraInfoPtr right_camera_info = boost::make_shared<sensor_msgs::CameraInfo>(right_camera_info_manager_->getCameraInfo());
+        right_camera_info->header = cv_img_.header;
+
+        right_camera_info_publisher_.publish(right_camera_info);
+      }
 
 
-      if (left_camera_publisher_.getNumSubscribers() > 0){
+
+      if (left_mono_requested){
         camera_->toMonoMat(&left_cv_img_.image, 48 + 1280, 1280, 800);
 
         left_cv_img_.header = cv_img_.header;
 
-        sensor_msgs::CameraInfoPtr left_camera_info = boost::make_shared<sensor_msgs::CameraInfo>(left_camera_info_manager_->getCameraInfo());
-        left_camera_info->header = cv_img_.header;
-
-        left_camera_publisher_.publish(left_cv_img_.toImageMsg(), left_camera_info);
+        left_mono_publisher_.publish(left_cv_img_.toImageMsg());
       }
 
-      if (right_camera_publisher_.getNumSubscribers() > 0){
+      if (right_mono_requested){
         camera_->toMonoMat(&right_cv_img_.image, 48, 1280, 800);
 
         right_cv_img_.header = cv_img_.header;
 
-        sensor_msgs::CameraInfoPtr right_camera_info = boost::make_shared<sensor_msgs::CameraInfo>(right_camera_info_manager_->getCameraInfo());
-        right_camera_info->header = cv_img_.header;
-
-        right_camera_publisher_.publish(right_cv_img_.toImageMsg(), right_camera_info);
+        right_mono_publisher_.publish(right_cv_img_.toImageMsg());
       }
-      //camera_->freeBuf();
+
+
+      if (left_color_requested){
+        camera_->toColorMat(&left_cv_color_img_.image, 48 + 1280, 1280, 800);
+
+        left_cv_color_img_.header = cv_img_.header;
+
+        left_color_publisher_.publish(left_cv_color_img_.toImageMsg());
+      }
+
+      if (right_color_requested){
+        camera_->toColorMat(&right_cv_color_img_.image, 48, 1280, 800);
+
+        right_cv_color_img_.header = cv_img_.header;
+
+        right_color_publisher_.publish(right_cv_color_img_.toImageMsg());
+      }
+
     }else{
       camera_->Update(false);
     }
@@ -136,8 +195,17 @@ protected:
   image_transport::ImageTransport* image_transport_;
   image_transport::CameraPublisher camera_publisher_;
 
-  image_transport::CameraPublisher left_camera_publisher_;
-  image_transport::CameraPublisher right_camera_publisher_;
+  //image_transport::CameraPublisher left_camera_publisher_;
+  //image_transport::CameraPublisher right_camera_publisher_;
+
+  image_transport::Publisher left_mono_publisher_;
+  image_transport::Publisher right_mono_publisher_;
+  image_transport::Publisher left_color_publisher_;
+  image_transport::Publisher right_color_publisher_;
+  ros::Publisher left_camera_info_publisher_;
+  ros::Publisher right_camera_info_publisher_;
+
+
 
   boost::shared_ptr<camera_info_manager::CameraInfoManager> left_camera_info_manager_;
   boost::shared_ptr<camera_info_manager::CameraInfoManager> right_camera_info_manager_;
@@ -145,6 +213,8 @@ protected:
   cv_bridge::CvImage cv_img_;
   cv_bridge::CvImage left_cv_img_;
   cv_bridge::CvImage right_cv_img_;
+  cv_bridge::CvImage left_cv_color_img_;
+  cv_bridge::CvImage right_cv_color_img_;
 
   ros::Timer update_timer_;
 

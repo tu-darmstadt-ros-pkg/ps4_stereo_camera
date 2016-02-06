@@ -88,6 +88,7 @@ public:
   void toIplMonoImage(IplImage *im);
   void toMonoMat(cv::Mat *im);
   void toMonoMat(cv::Mat *l, int offset_x, int width, int height);
+  void toColorMat(cv::Mat *l, int offset_x, int width, int height);
 #endif
 
 
