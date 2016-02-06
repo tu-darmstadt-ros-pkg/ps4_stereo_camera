@@ -598,6 +598,8 @@ void Camera::Stop() {
 unsigned char *Camera::Get(bool retrieve_img) {
   //struct v4l2_buffer buf;
 
+  buf = new v4l2_buffer;
+
   switch(io) {
     case IO_METHOD_READ:
 /*
@@ -619,11 +621,11 @@ unsigned char *Camera::Get(bool retrieve_img) {
       break;
 
     case IO_METHOD_MMAP:
-      CLEAR(buf);
+      CLEAR(*buf);
 
-      buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-      buf.memory = V4L2_MEMORY_MMAP;
-      if(-1 == xioctl (fd, VIDIOC_DQBUF, &buf)) {
+      buf->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+      buf->memory = V4L2_MEMORY_MMAP;
+      if(-1 == xioctl (fd, VIDIOC_DQBUF, buf)) {
         switch (errno) {
           case EAGAIN:
             return 0;
@@ -633,14 +635,17 @@ unsigned char *Camera::Get(bool retrieve_img) {
         }
       }
 
-      assert(buf.index < (unsigned int)n_buffers);
+      assert(buf->index < (unsigned int)n_buffers);
 
-      if (retrieve_img){
-        memcpy(data, (unsigned char *)buffers[buf.index].start, buffers[buf.index].length);
-      }
+      //if (retrieve_img){
+      //  memcpy(data, (unsigned char *)buffers[buf->index].start, buffers[buf->index].length);
+      //}
 
-      //if(-1 == xioctl (fd, VIDIOC_QBUF, &buf))
+      //if(-1 == xioctl (fd, VIDIOC_QBUF, buf))
       //  return 0; //errno_exit ("VIDIOC_QBUF");
+
+      //delete buf;
+      //buf = 0;
 
     return data;
 
@@ -685,11 +690,15 @@ unsigned char *Camera::Get(bool retrieve_img) {
   return 0;
 }
 
-bool Camera::freeBuf()
+bool Camera::freeBuffer()
 {
-  if(-1 == xioctl (fd, VIDIOC_QBUF, &buf))
+  if(-1 == xioctl (fd, VIDIOC_QBUF, buf))
     return false; //errno_exit ("VIDIOC_QBUF");
 
+  if(buf){
+    delete buf;
+    buf = 0;
+  }
   return true;
 }
 
@@ -813,7 +822,7 @@ void Camera::toMonoMat(cv::Mat *l) {
 void Camera::toMonoMat(cv::Mat *l, int roi_offset_x, int roi_width, int roi_height) {
   unsigned char *l_=(unsigned char *)l->data;
 
-  //unsigned char *l_=(unsigned char *)buffers[buf.index].start;
+  unsigned char *buf_data=(unsigned char *)buffers[buf->index].start;
 
 
   int dataIndex = 0;
@@ -822,37 +831,15 @@ void Camera::toMonoMat(cv::Mat *l, int roi_offset_x, int roi_width, int roi_heig
 
   //std::cout << size_x << " " << size_y << " " << roi_offset_x << " " << roi_width << " " << roi_height << "\n";
 
-
   int idx = 0;
   for (int j = 0; j < size_y; ++j){
     dataIndex = (j * size_x + roi_offset_x)*2;
     for (int i = 0; i < roi_width; ++i){
-      l_[idx] = data[dataIndex];
-      dataIndex+=2;
-      idx++;
+      l_[idx++] = buf_data[dataIndex+=2];
+      //dataIndex+=2;
+      //idx++;
     }
   }
-
-
-  /*
-  int dataIndex = 0;
-  int size_x = roi_width;
-  int size_y = 800;
-
-  std::cout << size_x << " " << size_y << "\n";
-
-
-  int idx = 0;
-  for (int j = 0; j < size_x; ++j){
-    dataIndex = j * (size_y+8);
-    for (int i = 0; i < roi_height; ++i){
-      //std::cout << idx << "\n";
-      l_[idx++] = data[dataIndex];
-      dataIndex+=2;
-    }
-  }
-  */
-
 }
 
 

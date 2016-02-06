@@ -68,10 +68,11 @@ public:
   buffer *buffers;
   int n_buffers;
 
+  struct v4l2_buffer* buf;
+
+
   int mb, Mb, db, mc, Mc, dc, ms, Ms, ds, mh, Mh, dh, msh, Msh, dsh;
   bool ha;
-
-  struct v4l2_buffer buf;
 
   Camera(const char *name, int w, int h, int fps=30);
   ~Camera();
@@ -80,8 +81,7 @@ public:
   bool Update(bool retrieve_img = true, unsigned int t=100, int timeout_ms=500); //better  (t=0.1ms, in usecs)
   bool Update(Camera *c2, unsigned int t=100, int timeout_ms=500);
 
-  bool freeBuf();
-  //unsigned char* getBuf(){ return
+  bool freeBuffer();
 
 #ifdef USE_OPENCV
   void toIplImage(IplImage *im);

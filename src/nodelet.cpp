@@ -121,11 +121,11 @@ public:
 
         right_camera_publisher_.publish(right_cv_img_.toImageMsg(), right_camera_info);
       }
-
+      //camera_->freeBuf();
     }else{
       camera_->Update(false);
     }
-    camera_->freeBuf();
+    camera_->freeBuffer();
   }
 
 
