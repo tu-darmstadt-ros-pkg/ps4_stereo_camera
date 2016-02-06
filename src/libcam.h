@@ -13,6 +13,10 @@
 //#include <opencv2/opencv.hpp>
 #endif
 
+#include <asm/types.h>          /* for videodev2.h */
+
+#include <linux/videodev2.h>
+
 
 
 struct buffer {
@@ -49,6 +53,7 @@ private:
 
 
 public:
+
   const char *name;  //dev_name
   int width;
   int height;
@@ -66,6 +71,7 @@ public:
   int mb, Mb, db, mc, Mc, dc, ms, Ms, ds, mh, Mh, dh, msh, Msh, dsh;
   bool ha;
 
+  struct v4l2_buffer buf;
 
   Camera(const char *name, int w, int h, int fps=30);
   ~Camera();
@@ -73,6 +79,9 @@ public:
   unsigned char *Get(bool retrieve_image);    //deprecated
   bool Update(bool retrieve_img = true, unsigned int t=100, int timeout_ms=500); //better  (t=0.1ms, in usecs)
   bool Update(Camera *c2, unsigned int t=100, int timeout_ms=500);
+
+  bool freeBuf();
+  //unsigned char* getBuf(){ return
 
 #ifdef USE_OPENCV
   void toIplImage(IplImage *im);

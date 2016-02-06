@@ -596,7 +596,7 @@ void Camera::Stop() {
 }
 
 unsigned char *Camera::Get(bool retrieve_img) {
-  struct v4l2_buffer buf;
+  //struct v4l2_buffer buf;
 
   switch(io) {
     case IO_METHOD_READ:
@@ -639,8 +639,8 @@ unsigned char *Camera::Get(bool retrieve_img) {
         memcpy(data, (unsigned char *)buffers[buf.index].start, buffers[buf.index].length);
       }
 
-      if(-1 == xioctl (fd, VIDIOC_QBUF, &buf))
-        return 0; //errno_exit ("VIDIOC_QBUF");
+      //if(-1 == xioctl (fd, VIDIOC_QBUF, &buf))
+      //  return 0; //errno_exit ("VIDIOC_QBUF");
 
     return data;
 
@@ -683,6 +683,14 @@ unsigned char *Camera::Get(bool retrieve_img) {
   }
 
   return 0;
+}
+
+bool Camera::freeBuf()
+{
+  if(-1 == xioctl (fd, VIDIOC_QBUF, &buf))
+    return false; //errno_exit ("VIDIOC_QBUF");
+
+  return true;
 }
 
 bool Camera::Update(bool retrieve_img, unsigned int t, int timeout_ms) {
@@ -804,6 +812,9 @@ void Camera::toMonoMat(cv::Mat *l) {
 
 void Camera::toMonoMat(cv::Mat *l, int roi_offset_x, int roi_width, int roi_height) {
   unsigned char *l_=(unsigned char *)l->data;
+
+  //unsigned char *l_=(unsigned char *)buffers[buf.index].start;
+
 
   int dataIndex = 0;
   int size_x = this->width;

@@ -125,6 +125,7 @@ public:
     }else{
       camera_->Update(false);
     }
+    camera_->freeBuf();
   }
 
 
