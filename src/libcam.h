@@ -33,6 +33,8 @@
 
 #include <linux/videodev2.h>
 
+#include <boost/shared_ptr.hpp>
+
 
 
 struct buffer {
@@ -84,7 +86,9 @@ public:
   buffer *buffers;
   int n_buffers;
 
-  struct v4l2_buffer* buf;
+  //struct v4l2_buffer* buf;
+  //boost::shared_ptr<struct v4l2_buffer> buf;
+  struct v4l2_buffer buf;
 
 
   int mb, Mb, db, mc, Mc, dc, ms, Ms, ds, mh, Mh, dh, msh, Msh, dsh;

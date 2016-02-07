@@ -615,7 +615,7 @@ void Camera::Stop() {
 unsigned char *Camera::Get(bool retrieve_img) {
   //struct v4l2_buffer buf;
 
-  buf = new v4l2_buffer;
+  //buf.reset(new v4l2_buffer);
 
   switch(io) {
     case IO_METHOD_READ:
@@ -638,11 +638,11 @@ unsigned char *Camera::Get(bool retrieve_img) {
       break;
 
     case IO_METHOD_MMAP:
-      CLEAR(*buf);
+      CLEAR(buf);
 
-      buf->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-      buf->memory = V4L2_MEMORY_MMAP;
-      if(-1 == xioctl (fd, VIDIOC_DQBUF, buf)) {
+      buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+      buf.memory = V4L2_MEMORY_MMAP;
+      if(-1 == xioctl (fd, VIDIOC_DQBUF, &buf)) {
         switch (errno) {
           case EAGAIN:
             return 0;
@@ -652,7 +652,7 @@ unsigned char *Camera::Get(bool retrieve_img) {
         }
       }
 
-      assert(buf->index < (unsigned int)n_buffers);
+      assert(buf.index < (unsigned int)n_buffers);
 
       //if (retrieve_img){
       //  memcpy(data, (unsigned char *)buffers[buf->index].start, buffers[buf->index].length);
@@ -709,13 +709,13 @@ unsigned char *Camera::Get(bool retrieve_img) {
 
 bool Camera::freeBuffer()
 {
-  if(-1 == xioctl (fd, VIDIOC_QBUF, buf))
+  if(-1 == xioctl (fd, VIDIOC_QBUF, &buf))
     return false; //errno_exit ("VIDIOC_QBUF");
 
-  if(buf){
-    delete buf;
-    buf = 0;
-  }
+  //if(buf){
+  //  delete buf;
+  //  buf = 0;
+  //}
   return true;
 }
 
@@ -827,7 +827,7 @@ void Camera::toIplMonoImage(IplImage *l) {
 void Camera::toMonoMat(cv::Mat *l) {
   unsigned char *l_=(unsigned char *)l->data;
 
-  unsigned char *buf_data=(unsigned char *)buffers[buf->index].start;
+  unsigned char *buf_data=(unsigned char *)buffers[buf.index].start;
 
   int dataIndex = 0;
   int size = l->rows * l->cols;
@@ -841,7 +841,7 @@ void Camera::toMonoMat(cv::Mat *l) {
 void Camera::toMonoMat(cv::Mat *l, int roi_offset_x, int roi_width, int roi_height) {
   unsigned char *l_=(unsigned char *)l->data;
 
-  unsigned char *buf_data=(unsigned char *)buffers[buf->index].start;
+  unsigned char *buf_data=(unsigned char *)buffers[buf.index].start;
 
 
   int dataIndex = 0;
@@ -864,7 +864,7 @@ void Camera::toMonoMat(cv::Mat *l, int roi_offset_x, int roi_width, int roi_heig
 void Camera::toColorMat(cv::Mat *l, int roi_offset_x, int roi_width, int roi_height) {
   unsigned char *l_=(unsigned char *)l->data;
 
-  unsigned char *buf_data=(unsigned char *)buffers[buf->index].start;
+  unsigned char *buf_data=(unsigned char *)buffers[buf.index].start;
 
   /*
   // Below eats significant CPU for conversion to RGB, have to find something better

@@ -81,7 +81,7 @@ public:
 
     this->setupModes();
 
-    current_mode_ = 1;
+    current_mode_ = 2;
 
     this->setupResolution(camera_modes_[current_mode_].img_width,
                           camera_modes_[current_mode_].img_height,
@@ -121,11 +121,11 @@ public:
     camera_modes_.push_back(medium);
 
     PS4CameraMode low;
-    low.img_height = 200;
-    low.img_width = 320;
+    low.img_height = 192;
+    low.img_width = 319;
     low.raw_height = 200;
     low.raw_width = 898;
-    low.raw_offset_x = 12;
+    low.raw_offset_x = 48;
     camera_modes_.push_back(low);
   }
 
