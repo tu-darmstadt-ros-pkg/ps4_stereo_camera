@@ -1,3 +1,20 @@
+/*
+ Copyright (C) 2015 Stefan Kohlbrecher, TU Darmstadt
+
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License
+ along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include "libcam.h"
 #include <nodelet/nodelet.h>
 #include <image_transport/image_transport.h>
@@ -35,16 +52,10 @@ public:
     pn.param("width", img_width, 640);
     pn.param("height", img_height, 480);
 
-
-
     left_camera_info_manager_.reset(new camera_info_manager::CameraInfoManager(ros::NodeHandle("~/left"), p_camera_name_+"/left", p_left_camera_info_url_));
     right_camera_info_manager_.reset(new camera_info_manager::CameraInfoManager(ros::NodeHandle("~/right"), p_camera_name_+"/right", p_right_camera_info_url_));
 
     image_transport_ = new image_transport::ImageTransport(getPrivateNodeHandle());
-    //camera_publisher_ = image_transport_->advertiseCamera("image_raw", 1);
-
-    //left_camera_publisher_  = image_transport_->advertiseCamera("left/image_raw", 5);
-    //right_camera_publisher_ = image_transport_->advertiseCamera("right/image_raw", 5);
 
     left_mono_publisher_ = image_transport_->advertise("left/image_mono", 5);
     right_mono_publisher_ = image_transport_->advertise("right/image_mono", 5);
@@ -196,13 +207,9 @@ public:
 
 protected:
   boost::shared_ptr<Camera> camera_;
-  //camera_info_manager::CameraInfoManager* camera_info_manager_;
 
   image_transport::ImageTransport* image_transport_;
   image_transport::CameraPublisher camera_publisher_;
-
-  //image_transport::CameraPublisher left_camera_publisher_;
-  //image_transport::CameraPublisher right_camera_publisher_;
 
   image_transport::Publisher left_mono_publisher_;
   image_transport::Publisher right_mono_publisher_;
@@ -210,8 +217,6 @@ protected:
   image_transport::Publisher right_color_publisher_;
   ros::Publisher left_camera_info_publisher_;
   ros::Publisher right_camera_info_publisher_;
-
-
 
   boost::shared_ptr<camera_info_manager::CameraInfoManager> left_camera_info_manager_;
   boost::shared_ptr<camera_info_manager::CameraInfoManager> right_camera_info_manager_;
