@@ -35,7 +35,7 @@ public:
     pn.param("width", img_width, 640);
     pn.param("height", img_height, 480);
 
-    camera_ = new Camera(p_device_name_.c_str(), img_width, img_height, p_fps_);
+    camera_.reset(new Camera(p_device_name_.c_str(), img_width, img_height, p_fps_));
 
     left_camera_info_manager_.reset(new camera_info_manager::CameraInfoManager(ros::NodeHandle("~/left"), p_camera_name_+"/left", p_left_camera_info_url_));
     right_camera_info_manager_.reset(new camera_info_manager::CameraInfoManager(ros::NodeHandle("~/right"), p_camera_name_+"/right", p_right_camera_info_url_));
@@ -74,8 +74,8 @@ public:
     left_cv_color_img_.image = cv::Mat(800,1280,CV_8UC2);
 
     right_cv_color_img_.header.frame_id = p_frame_name_;
-    right_cv_color_img_.encoding = sensor_msgs::image_encodings::RGB8;
-    right_cv_color_img_.image = cv::Mat(800,1280,CV_8UC3);
+    right_cv_color_img_.encoding = sensor_msgs::image_encodings::YUV422;
+    right_cv_color_img_.image = cv::Mat(800,1280,CV_8UC2);
 
     //cv::Mat* img = &cvImg.image;
   }
@@ -189,7 +189,7 @@ public:
 
 
 protected:
-  Camera* camera_;
+  boost::shared_ptr<Camera> camera_;
   //camera_info_manager::CameraInfoManager* camera_info_manager_;
 
   image_transport::ImageTransport* image_transport_;
