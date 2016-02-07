@@ -35,7 +35,7 @@ public:
     pn.param("width", img_width, 640);
     pn.param("height", img_height, 480);
 
-    camera_.reset(new Camera(p_device_name_.c_str(), img_width, img_height, p_fps_));
+
 
     left_camera_info_manager_.reset(new camera_info_manager::CameraInfoManager(ros::NodeHandle("~/left"), p_camera_name_+"/left", p_left_camera_info_url_));
     right_camera_info_manager_.reset(new camera_info_manager::CameraInfoManager(ros::NodeHandle("~/right"), p_camera_name_+"/right", p_right_camera_info_url_));
@@ -48,36 +48,42 @@ public:
 
     left_mono_publisher_ = image_transport_->advertise("left/image_mono", 5);
     right_mono_publisher_ = image_transport_->advertise("right/image_mono", 5);
-    left_color_publisher_ = image_transport_->advertise("left/image_color", 5);
-    right_color_publisher_ = image_transport_->advertise("right/image_color", 5);
+    left_color_publisher_ = image_transport_->advertise("left/image_raw", 5);
+    right_color_publisher_ = image_transport_->advertise("right/image_raw", 5);
 
     left_camera_info_publisher_ = getPrivateNodeHandle().advertise<sensor_msgs::CameraInfo>("left/camera_info",5, false);
     right_camera_info_publisher_ = getPrivateNodeHandle().advertise<sensor_msgs::CameraInfo>("right/camera_info",5, false);
 
 
+    camera_.reset(new Camera(p_device_name_.c_str(), img_width, img_height, p_fps_));
+    this->setupResolution(1280, 800);
+
     update_timer_ = pn.createTimer(ros::Duration(1.0/(static_cast<double>(p_fps_))), &StereoCameraNodelet::timerPublishImageCallback, this, false );
 
+    //cv::Mat* img = &cvImg.image;
+  }
+
+  void setupResolution(int width, int height)
+  {
     cv_img_.header.frame_id = p_frame_name_;
     cv_img_.encoding = sensor_msgs::image_encodings::MONO8;
-    cv_img_.image = cv::Mat(img_height,img_width,CV_8UC1);
+    cv_img_.image = cv::Mat(height,width,CV_8UC1);
 
     left_cv_img_.header.frame_id = p_frame_name_;
     left_cv_img_.encoding = sensor_msgs::image_encodings::MONO8;
-    left_cv_img_.image = cv::Mat(800,1280,CV_8UC1);
+    left_cv_img_.image = cv::Mat(height,width,CV_8UC1);
 
     right_cv_img_.header.frame_id = p_frame_name_;
     right_cv_img_.encoding = sensor_msgs::image_encodings::MONO8;
-    right_cv_img_.image = cv::Mat(800,1280,CV_8UC1);
+    right_cv_img_.image = cv::Mat(height,width,CV_8UC1);
 
     left_cv_color_img_.header.frame_id = p_frame_name_;
     left_cv_color_img_.encoding = sensor_msgs::image_encodings::YUV422;
-    left_cv_color_img_.image = cv::Mat(800,1280,CV_8UC2);
+    left_cv_color_img_.image = cv::Mat(height,width,CV_8UC2);
 
     right_cv_color_img_.header.frame_id = p_frame_name_;
     right_cv_color_img_.encoding = sensor_msgs::image_encodings::YUV422;
-    right_cv_color_img_.image = cv::Mat(800,1280,CV_8UC2);
-
-    //cv::Mat* img = &cvImg.image;
+    right_cv_color_img_.image = cv::Mat(height,width,CV_8UC2);
   }
 
   void timerPublishImageCallback(const ros::TimerEvent& e)
