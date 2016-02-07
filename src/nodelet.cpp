@@ -23,7 +23,20 @@
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/image_encodings.h>
 
+#include <boost/thread.hpp>
+#include <boost/scoped_ptr.hpp>
+
 namespace ps4_stereo_camera{
+
+
+struct PS4CameraMode
+{
+  int img_width;
+  int img_height;
+  int raw_width;
+  int raw_height;
+  int raw_offset_x;
+};
 
 class StereoCameraNodelet : public nodelet::Nodelet{
 public:
@@ -31,15 +44,14 @@ public:
     : nodelet::Nodelet()
     , img_counter_(0)
   {
-    //this->getNodeHandle();
   }
 
   void onInit()
   {
     ros::NodeHandle& pn = this->getPrivateNodeHandle();
     
-    int img_width = 640;
-    int img_height = 480;
+    //int img_width = 640;
+    //int img_height = 480;
 
     pn.param("camera_name", p_camera_name_, std::string("ps_eye"));
 //     pn.param("camera_topic", p_camera_topic_, p_camera_name_ + "/image_raw");
@@ -49,13 +61,15 @@ public:
     pn.param("right_camera_info_url", p_right_camera_info_url_, std::string(""));
     pn.param("use_every_n_th_image", p_use_every_n_th_image_, 1);
     pn.param("fps", p_fps_, 30);
-    pn.param("width", img_width, 640);
-    pn.param("height", img_height, 480);
+    //pn.param("width", img_width, 640);
+    //pn.param("height", img_height, 480);
 
     left_camera_info_manager_.reset(new camera_info_manager::CameraInfoManager(ros::NodeHandle("~/left"), p_camera_name_+"/left", p_left_camera_info_url_));
     right_camera_info_manager_.reset(new camera_info_manager::CameraInfoManager(ros::NodeHandle("~/right"), p_camera_name_+"/right", p_right_camera_info_url_));
 
     image_transport_ = new image_transport::ImageTransport(getPrivateNodeHandle());
+
+    raw_debug_publisher_ = image_transport_->advertise("image_raw_debug", 5);
 
     left_mono_publisher_ = image_transport_->advertise("left/image_mono", 5);
     right_mono_publisher_ = image_transport_->advertise("right/image_mono", 5);
@@ -65,20 +79,61 @@ public:
     left_camera_info_publisher_ = getPrivateNodeHandle().advertise<sensor_msgs::CameraInfo>("left/camera_info",5, false);
     right_camera_info_publisher_ = getPrivateNodeHandle().advertise<sensor_msgs::CameraInfo>("right/camera_info",5, false);
 
+    this->setupModes();
 
-    camera_.reset(new Camera(p_device_name_.c_str(), img_width, img_height, p_fps_));
-    this->setupResolution(1280, 800);
+    current_mode_ = 1;
 
-    update_timer_ = pn.createTimer(ros::Duration(1.0/(static_cast<double>(p_fps_))), &StereoCameraNodelet::timerPublishImageCallback, this, false );
+    this->setupResolution(camera_modes_[current_mode_].img_width,
+                          camera_modes_[current_mode_].img_height,
+                          camera_modes_[current_mode_].raw_width,
+                          camera_modes_[current_mode_].raw_height
+                          );
+
+    camera_.reset(new Camera(p_device_name_.c_str(),
+                             camera_modes_[current_mode_].raw_width,
+                             camera_modes_[current_mode_].raw_height,
+                             p_fps_));
+
+    stream_thread_.reset(new boost::thread(boost::bind(&StereoCameraNodelet::run, this)));
+
+    //update_timer_ = pn.createTimer(ros::Duration(1.0/(static_cast<double>(p_fps_))), &StereoCameraNodelet::timerPublishImageCallback, this, false );
 
     //cv::Mat* img = &cvImg.image;
   }
 
-  void setupResolution(int width, int height)
+  void setupModes()
+  {
+    PS4CameraMode high;
+
+    high.img_height = 800;
+    high.img_width = 1280;
+    high.raw_height = 808;
+    high.raw_width = 3448;
+    high.raw_offset_x = 48;
+    camera_modes_.push_back(high);
+
+    PS4CameraMode medium;
+    medium.img_height = 400;
+    medium.img_width = 640;
+    medium.raw_height = 408;
+    medium.raw_width = 1748;
+    medium.raw_offset_x = 24;
+    camera_modes_.push_back(medium);
+
+    PS4CameraMode low;
+    low.img_height = 200;
+    low.img_width = 320;
+    low.raw_height = 200;
+    low.raw_width = 898;
+    low.raw_offset_x = 12;
+    camera_modes_.push_back(low);
+  }
+
+  void setupResolution(int width, int height, int raw_width, int raw_height)
   {
     cv_img_.header.frame_id = p_frame_name_;
     cv_img_.encoding = sensor_msgs::image_encodings::MONO8;
-    cv_img_.image = cv::Mat(height,width,CV_8UC1);
+    cv_img_.image = cv::Mat(raw_height,raw_width,CV_8UC1);
 
     left_cv_img_.header.frame_id = p_frame_name_;
     left_cv_img_.encoding = sensor_msgs::image_encodings::MONO8;
@@ -97,119 +152,124 @@ public:
     right_cv_color_img_.image = cv::Mat(height,width,CV_8UC2);
   }
 
+  /*
   void timerPublishImageCallback(const ros::TimerEvent& e)
   {
     while (ros::ok()){
       this->retrieveAndPublishImage();
     }
   }
+  */
 
-  void retrieveAndPublishImage()
+  void run()
   {
-    img_counter_++;
+    while (ros::ok()){
+      img_counter_++;
 
-    bool retrieve_image = false;
+      bool retrieve_image = false;
 
-    if ((img_counter_ % p_use_every_n_th_image_) == 0){
-      retrieve_image = true;
+      if ((img_counter_ % p_use_every_n_th_image_) == 0){
+        retrieve_image = true;
+      }
+
+      if (retrieve_image){
+        camera_->Update(true);
+
+        ros::Time capture_time = ros::Time::now();
+
+        int img_width  = camera_modes_[current_mode_].img_width;
+        int img_height = camera_modes_[current_mode_].img_height;
+        int img_offset = camera_modes_[current_mode_].raw_offset_x;
+
+        cv_img_.header.stamp = capture_time;
+
+
+        if (raw_debug_publisher_.getNumSubscribers() > 0){
+          camera_->toMonoMat(&cv_img_.image);
+          raw_debug_publisher_.publish(cv_img_.toImageMsg());
+        }
+
+        bool left_camera_info_requested = left_camera_info_publisher_.getNumSubscribers() > 0;
+        bool left_mono_requested = left_mono_publisher_.getNumSubscribers() > 0;
+        bool left_color_requested = left_color_publisher_.getNumSubscribers() > 0;
+
+        bool right_camera_info_requested = right_camera_info_publisher_.getNumSubscribers() > 0;
+        bool right_mono_requested = right_mono_publisher_.getNumSubscribers() > 0;
+        bool right_color_requested = right_color_publisher_.getNumSubscribers() > 0;
+
+        if (left_camera_info_requested ||
+            left_mono_requested ||
+            left_color_requested)
+        {
+          sensor_msgs::CameraInfoPtr left_camera_info = boost::make_shared<sensor_msgs::CameraInfo>(left_camera_info_manager_->getCameraInfo());
+          left_camera_info->header = cv_img_.header;
+
+          left_camera_info_publisher_.publish(left_camera_info);
+        }
+
+        if (right_camera_info_requested ||
+            right_mono_requested ||
+            right_color_requested)
+        {
+          sensor_msgs::CameraInfoPtr right_camera_info = boost::make_shared<sensor_msgs::CameraInfo>(right_camera_info_manager_->getCameraInfo());
+          right_camera_info->header = cv_img_.header;
+
+          right_camera_info_publisher_.publish(right_camera_info);
+        }
+
+
+
+        if (left_mono_requested){
+          camera_->toMonoMat(&left_cv_img_.image, img_offset + img_width, img_width, img_height);
+
+          left_cv_img_.header = cv_img_.header;
+
+          left_mono_publisher_.publish(left_cv_img_.toImageMsg());
+        }
+
+        if (right_mono_requested){
+          camera_->toMonoMat(&right_cv_img_.image, img_offset, img_width, img_height);
+
+          right_cv_img_.header = cv_img_.header;
+
+          right_mono_publisher_.publish(right_cv_img_.toImageMsg());
+        }
+
+
+        if (left_color_requested){
+          camera_->toColorMat(&left_cv_color_img_.image, img_offset + img_width, img_width, img_height);
+
+          left_cv_color_img_.header = cv_img_.header;
+
+          left_color_publisher_.publish(left_cv_color_img_.toImageMsg());
+        }
+
+        if (right_color_requested){
+          camera_->toColorMat(&right_cv_color_img_.image, img_offset, img_width, img_height);
+
+          right_cv_color_img_.header = cv_img_.header;
+
+          right_color_publisher_.publish(right_cv_color_img_.toImageMsg());
+        }
+
+      }else{
+        camera_->Update(false);
+      }
+      if (!camera_->freeBuffer()){
+        NODELET_ERROR("Error while freeing buffer!");
+      }
     }
-
-    if (retrieve_image){
-      camera_->Update(true);
-
-      ros::Time capture_time = ros::Time::now();
-
-
-
-      cv_img_.header.stamp = capture_time;
-
-
-      /*
-      if (camera_publisher_.getNumSubscribers() > 0){
-        //camera_->toMonoMat(&cv_img_.image);
-
-        //sensor_msgs::CameraInfoPtr camera_info = boost::make_shared<sensor_msgs::CameraInfo>(camera_info_manager_->getCameraInfo());
-        //camera_info->header = cv_img_.header;
-
-        //camera_publisher_.publish(cv_img_.toImageMsg(), camera_info);
-      }
-      */
-
-      bool left_camera_info_requested = left_camera_info_publisher_.getNumSubscribers() > 0;
-      bool left_mono_requested = left_mono_publisher_.getNumSubscribers() > 0;
-      bool left_color_requested = left_color_publisher_.getNumSubscribers() > 0;
-
-      bool right_camera_info_requested = right_camera_info_publisher_.getNumSubscribers() > 0;
-      bool right_mono_requested = right_mono_publisher_.getNumSubscribers() > 0;
-      bool right_color_requested = right_color_publisher_.getNumSubscribers() > 0;
-
-      if (left_camera_info_requested ||
-          left_mono_requested ||
-          left_color_requested)
-      {
-        sensor_msgs::CameraInfoPtr left_camera_info = boost::make_shared<sensor_msgs::CameraInfo>(left_camera_info_manager_->getCameraInfo());
-        left_camera_info->header = cv_img_.header;
-
-        left_camera_info_publisher_.publish(left_camera_info);
-      }
-
-      if (right_camera_info_requested ||
-          right_mono_requested ||
-          right_color_requested)
-      {
-        sensor_msgs::CameraInfoPtr right_camera_info = boost::make_shared<sensor_msgs::CameraInfo>(right_camera_info_manager_->getCameraInfo());
-        right_camera_info->header = cv_img_.header;
-
-        right_camera_info_publisher_.publish(right_camera_info);
-      }
-
-
-
-      if (left_mono_requested){
-        camera_->toMonoMat(&left_cv_img_.image, 48 + 1280, 1280, 800);
-
-        left_cv_img_.header = cv_img_.header;
-
-        left_mono_publisher_.publish(left_cv_img_.toImageMsg());
-      }
-
-      if (right_mono_requested){
-        camera_->toMonoMat(&right_cv_img_.image, 48, 1280, 800);
-
-        right_cv_img_.header = cv_img_.header;
-
-        right_mono_publisher_.publish(right_cv_img_.toImageMsg());
-      }
-
-
-      if (left_color_requested){
-        camera_->toColorMat(&left_cv_color_img_.image, 48 + 1280, 1280, 800);
-
-        left_cv_color_img_.header = cv_img_.header;
-
-        left_color_publisher_.publish(left_cv_color_img_.toImageMsg());
-      }
-
-      if (right_color_requested){
-        camera_->toColorMat(&right_cv_color_img_.image, 48, 1280, 800);
-
-        right_cv_color_img_.header = cv_img_.header;
-
-        right_color_publisher_.publish(right_cv_color_img_.toImageMsg());
-      }
-
-    }else{
-      camera_->Update(false);
-    }
-    camera_->freeBuffer();
   }
 
 
 protected:
   boost::shared_ptr<Camera> camera_;
+  boost::scoped_ptr<boost::thread> stream_thread_;
+
+  std::vector<PS4CameraMode> camera_modes_;
 
   image_transport::ImageTransport* image_transport_;
-  image_transport::CameraPublisher camera_publisher_;
+  image_transport::Publisher raw_debug_publisher_;
 
   image_transport::Publisher left_mono_publisher_;
   image_transport::Publisher right_mono_publisher_;
@@ -228,6 +288,9 @@ protected:
   cv_bridge::CvImage right_cv_color_img_;
 
   ros::Timer update_timer_;
+
+
+  int current_mode_;
 
   std::string p_camera_name_;
   std::string p_camera_topic_;

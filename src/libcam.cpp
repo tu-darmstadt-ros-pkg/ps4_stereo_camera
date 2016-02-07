@@ -827,10 +827,12 @@ void Camera::toIplMonoImage(IplImage *l) {
 void Camera::toMonoMat(cv::Mat *l) {
   unsigned char *l_=(unsigned char *)l->data;
 
+  unsigned char *buf_data=(unsigned char *)buffers[buf->index].start;
+
   int dataIndex = 0;
   int size = l->rows * l->cols;
   for (int i = 0; i < size; ++i){
-    l_[i] = data[dataIndex];
+    l_[i] = buf_data[dataIndex];
     dataIndex+=2;
   }
 }
