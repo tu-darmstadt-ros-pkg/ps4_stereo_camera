@@ -38,7 +38,7 @@ $ rosrun ps4_stereo_camera create_udev_rules
 
 2. Check if you can obtain the  image from ps4 camera by webcam software (cheese, camorama, etc).
 
-3. Run stereo.launch. DEVICE option is used specify video device. You can bring up stereo viewer if viewer option is true.
+3. Run stereo.launch.
 ```
 $ roslaunch ps4_stereo_camera ps4_stereo_camera_default.launch
 ```
