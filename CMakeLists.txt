@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(ps4_stereo_camera)
 
 #SET(CMAKE_BUILD_TYPE Release)
+#SET(CMAKE_BUILD_TYPE Debug)
 
 find_package(catkin REQUIRED COMPONENTS
   camera_info_manager

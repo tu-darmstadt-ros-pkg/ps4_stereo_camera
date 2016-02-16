@@ -97,7 +97,7 @@ Camera::Camera(const char *n, int w, int h, int f) {
 
   io=IO_METHOD_MMAP;
 
-  data=(unsigned char *)malloc(w*h*4);
+  //data=(unsigned char *)malloc(w*h*4);
 
   this->Open();
   this->Init();
@@ -116,7 +116,6 @@ void Camera::StopCam()
     this->UnInit();
     this->Close();
 
-    free(data);
     initialised = false;
   }
 }
@@ -612,7 +611,7 @@ void Camera::Stop() {
 
 }
 
-unsigned char *Camera::Get(bool retrieve_img) {
+bool Camera::Get(bool retrieve_img) {
   //struct v4l2_buffer buf;
 
   //buf.reset(new v4l2_buffer);
@@ -664,7 +663,7 @@ unsigned char *Camera::Get(bool retrieve_img) {
       //delete buf;
       //buf = 0;
 
-    return data;
+    return true;
 
 
       break;
@@ -704,7 +703,7 @@ unsigned char *Camera::Get(bool retrieve_img) {
       break;
   }
 
-  return 0;
+  return false;
 }
 
 bool Camera::freeBuffer()
@@ -761,6 +760,7 @@ bool Camera::Update(Camera *c2, unsigned int t, int timeout_ms) {
 }
 
 #ifdef USE_OPENCV
+/*
 void Camera::toIplImage(IplImage *l) {
   unsigned char *l_=(unsigned char *)l->imageData;
 
@@ -823,6 +823,7 @@ void Camera::toIplMonoImage(IplImage *l) {
     dataIndex+=2;
   }
 }
+*/
 
 void Camera::toMonoMat(cv::Mat *l) {
   unsigned char *l_=(unsigned char *)l->data;

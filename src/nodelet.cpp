@@ -79,29 +79,18 @@ public:
     left_camera_info_publisher_ = getPrivateNodeHandle().advertise<sensor_msgs::CameraInfo>("left/camera_info",5, false);
     right_camera_info_publisher_ = getPrivateNodeHandle().advertise<sensor_msgs::CameraInfo>("right/camera_info",5, false);
 
-    this->setupModes();
+    this->loadModes();
 
     current_mode_ = 2;
 
-    this->setupResolution(camera_modes_[current_mode_].img_width,
-                          camera_modes_[current_mode_].img_height,
-                          camera_modes_[current_mode_].raw_width,
-                          camera_modes_[current_mode_].raw_height
-                          );
-
-    camera_.reset(new Camera(p_device_name_.c_str(),
-                             camera_modes_[current_mode_].raw_width,
-                             camera_modes_[current_mode_].raw_height,
-                             p_fps_));
+    this->setMode(current_mode_);
 
     stream_thread_.reset(new boost::thread(boost::bind(&StereoCameraNodelet::run, this)));
-
-    //update_timer_ = pn.createTimer(ros::Duration(1.0/(static_cast<double>(p_fps_))), &StereoCameraNodelet::timerPublishImageCallback, this, false );
 
     //cv::Mat* img = &cvImg.image;
   }
 
-  void setupModes()
+  void loadModes()
   {
     PS4CameraMode high;
 
@@ -129,6 +118,20 @@ public:
     camera_modes_.push_back(low);
   }
 
+  bool setMode(int mode)
+  {
+    this->setupResolution(camera_modes_[current_mode_].img_width,
+                          camera_modes_[current_mode_].img_height,
+                          camera_modes_[current_mode_].raw_width,
+                          camera_modes_[current_mode_].raw_height
+                          );
+
+    camera_.reset(new Camera(p_device_name_.c_str(),
+                             camera_modes_[current_mode_].raw_width,
+                             camera_modes_[current_mode_].raw_height,
+                             p_fps_));
+  }
+
   void setupResolution(int width, int height, int raw_width, int raw_height)
   {
     cv_img_.header.frame_id = p_frame_name_;
@@ -151,15 +154,6 @@ public:
     right_cv_color_img_.encoding = sensor_msgs::image_encodings::YUV422;
     right_cv_color_img_.image = cv::Mat(height,width,CV_8UC2);
   }
-
-  /*
-  void timerPublishImageCallback(const ros::TimerEvent& e)
-  {
-    while (ros::ok()){
-      this->retrieveAndPublishImage();
-    }
-  }
-  */
 
   void run()
   {
@@ -286,9 +280,6 @@ protected:
   cv_bridge::CvImage right_cv_img_;
   cv_bridge::CvImage left_cv_color_img_;
   cv_bridge::CvImage right_cv_color_img_;
-
-  ros::Timer update_timer_;
-
 
   int current_mode_;
 

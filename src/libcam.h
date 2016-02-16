@@ -79,15 +79,13 @@ public:
 
   int w2;
 
-  unsigned char *data;
+  //unsigned char *data;
 
   io_method io;
   int fd;
   buffer *buffers;
   int n_buffers;
 
-  //struct v4l2_buffer* buf;
-  //boost::shared_ptr<struct v4l2_buffer> buf;
   struct v4l2_buffer buf;
 
 
@@ -97,15 +95,13 @@ public:
   Camera(const char *name, int w, int h, int fps=30);
   ~Camera();
 
-  unsigned char *Get(bool retrieve_image);    //deprecated
+  bool Get(bool retrieve_image);    //deprecated
   bool Update(bool retrieve_img = true, unsigned int t=100, int timeout_ms=500); //better  (t=0.1ms, in usecs)
   bool Update(Camera *c2, unsigned int t=100, int timeout_ms=500);
 
   bool freeBuffer();
 
 #ifdef USE_OPENCV
-  void toIplImage(IplImage *im);
-  void toIplMonoImage(IplImage *im);
   void toMonoMat(cv::Mat *im);
   void toMonoMat(cv::Mat *l, int offset_x, int width, int height);
   void toColorMat(cv::Mat *l, int offset_x, int width, int height);
