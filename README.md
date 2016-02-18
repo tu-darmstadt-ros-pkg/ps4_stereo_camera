@@ -25,8 +25,10 @@ Code in this package is based partly on two other projects:
 
   If you are using ubuntu, you might want to check [this page](http://kernel.ubuntu.com/~kernel-ppa/mainline/v3.17.3-vivid/) for updating your kernel.
 * You'll need Pyusb 1.0 or the script executed in the udev rules will silently fail.
-    sudo pip install --pre pyusb
-
+```
+sudo apt-get install python-pip
+sudo pip install --pre pyusb
+```
 ## Usage
 
 0. Run create_udev_rules. Enter sudo password to place /etc/udev/rules.d/91-ps4eye.rules. You need this step only once.
